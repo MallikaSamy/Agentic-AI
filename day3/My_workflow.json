@@ -1,0 +1,187 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5031e192-bba0-4f40-bc9b-08db3a9f3299",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1o4fIsGiNIG5fn5CfsWkUYtHTPONGzZQBTrM45ff9cYw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1o4fIsGiNIG5fn5CfsWkUYtHTPONGzZQBTrM45ff9cYw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        220,
+        0
+      ],
+      "id": "8d3199a6-9661-4645-a4bd-df17b47a5fa5",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "t1Z9gVYF08UtioJN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        700,
+        220
+      ],
+      "id": "adfdc153-b8c6-4603-a74a-31bf74d2952d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SJrSpPd9NfeHluKo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=po.iipc@snsgroups.com",
+        "subject": "=Leave ",
+        "emailType": "text",
+        "message": "=Leave approved or not {{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1020,
+        0
+      ],
+      "id": "5d985557-dd14-4b76-b85e-0ac1fee8d23e",
+      "name": "Gmail",
+      "webhookId": "7ed1c165-4fcd-4b3b-9e34-f341c6ca259c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2zcKyT3llSQcmz3T",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Your work is to check whether the employee have to take the leave based on the availaing of the leave and then they applied.If the leave availbility is not there then it is rejected if yes then it is approved.{{ $json.markdown }}your input.According to that send teh email",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "8e323867-9175-448f-9223-e83478168157",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst markdown = items\n  .map((item) => {\n    const employeeId = item?.json[\"Employee ID\"];\n    const employeeName = item?.json[\"Employee Name\"];\n    const email = item?.json[\"Email\"];\n    const leaveFrom = item?.json[\"Leave From\"];\n    const leaveTo = item?.json[\"Leave To\"];\n    const noOfDaysApplying = item?.json[\"No of Days Appling\"];\n    const leaveBalance = item?.json[\"Leave Balance\"];\n\n    return `**Employee ID:** ${employeeId}\\n**Employee Name:** ${employeeName}\\n**Email:** ${email}\\n**Leave From:** ${leaveFrom}\\n**Leave To:** ${leaveTo}\\n**No of Days Applying:** ${noOfDaysApplying}\\n**Leave Balance:** ${leaveBalance}\\n\\n`;\n  })\n  .join(\"\");\n\nreturn { markdown };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "e576ac92-ca1e-49f9-bb68-da365f636ffd",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0a0d40e6-33e1-4f40-ba67-b37312ec4d3e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "36a9b8ce7ec3bc398d3bbc80cd44880c90b79d975a84120251fe63376cb940b1"
+  },
+  "id": "C2DNAi8s4PWJaTxj",
+  "tags": []
+}
